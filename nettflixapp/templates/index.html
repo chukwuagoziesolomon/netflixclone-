@@ -1,0 +1,35 @@
+        function addItemToList() {
+            const modal = document.getElementById('movieModal');
+            const movieUrl = modal.querySelector('.modal-content a').href;
+            const movieId = movieUrl.split('/').pop(); // Get the ID from the URL
+            const button = document.getElementById('addToListButton');
+            
+            button.disabled = true;
+            button.textContent = 'Adding...';
+
+            fetch("{% url 'add-to-list' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': "{{ csrf_token }}"
+                },
+                body: 'movie_id=' + movieId
+            })
+            .then(response => response.json())
+            .then(data => {
+                button.textContent = 'Added ✓';
+                button.classList.add('bg-green-600');
+                button.classList.remove('border-white');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.textContent = 'Error';
+                button.classList.add('bg-red-600');
+                
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = 'Add to List';
+                    button.classList.remove('bg-red-600');
+                }, 2000);
+            });
+        } 

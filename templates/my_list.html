@@ -40,7 +40,7 @@
 
 
         <div class="flex space-x-5 items-center">
-            <form action="search" method="POST">
+            <form action="search/" method="POST">
                 {% csrf_token %}
                 <input type="search" name="search_term" placeholder="Search" class="bg-gray-700 p-2 rounded">
                 <button class="bg-red-600 text-white p-2 rounded hover:bg-red-500">Search</button>
@@ -73,7 +73,7 @@
                 data-length="{{ movie.length }}"
                 data-image-card-url="{{ movie.image_card.url }}"
                 data-image-cover-url="{{ movie.image_cover.url }}"
-                data-video-url="/movie/{{ movie.uu_id }}"
+                data-video-url="/movie/{{ movie.id }}"
                 style="background-image: url('{{movie.image_card.url}}'); background-size: cover; background-position: center;">
             </div>
             {% endfor %}
@@ -95,11 +95,14 @@
             </div>
             <p class="mb-5">Detailed information about the movie.</p>
             <div class="flex space-x-4 mb-5">
-                <a href="movie.html">
+                <a href="">
                     <button class="bg-red-600 text-white p-2 px-5 rounded hover:bg-red-500">Play</button>
                 </a>
                 <button id="addToListButton" onclick="addItemToList()" class="border border-white text-white p-2 px-5 rounded hover:bg-gray-700">
                     Add to List
+                </button>
+                <button id="removeFromListButton" onclick="removeFromList()" class="bg-red-600 text-white p-2 px-5 rounded hover:bg-red-700">
+                    Remove from List
                 </button>
             </div>
         </div>
@@ -151,26 +154,76 @@
         }
 
         function addItemToList() {
-            const modal = document.getElementById('movieModal')
-            var movieID = modal.querySelector('.modal-content a').href;
+            const modal = document.getElementById('movieModal');
+            const movieUrl = modal.querySelector('.modal-content a').href;
+            const movieId = movieUrl.split('/').pop(); // Get the ID from the URL
+            const button = document.getElementById('addToListButton');
+            
+            button.disabled = true;
+            button.textContent = 'Adding...';
 
             $.ajax({
                 url: "{% url 'add-to-list' %}",
                 type: "POST",
                 data: {
-                    movie_id: movieID,
+                    movie_id: movieId,
                     csrfmiddlewaretoken: "{{ csrf_token }}"
                 },
                 success: function(data) {
-                    $('#addToListButton').text(data.message);
-
-                    $('#addToListButton').prop('disabled', true);
-
+                    button.textContent = 'Added ✓';
+                    button.classList.add('bg-green-600');
+                    button.classList.remove('border-white');
                     console.log("Item added to list!");
                 },
                 error: function(xhr, errmsg, err) {
-                    
                     console.error("Error adding item to list: " + errmsg);
+                    button.textContent = 'Error';
+                    button.classList.add('bg-red-600');
+                    
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = 'Add to List';
+                        button.classList.remove('bg-red-600');
+                    }, 2000);
+                }
+            });
+        }
+
+        function removeFromList() {
+            const modal = document.getElementById('movieModal');
+            const movieUrl = modal.querySelector('.modal-content a').href;
+            const movieId = movieUrl.split('/').pop(); // Get the ID from the URL
+            const button = document.getElementById('removeFromListButton');
+            
+            button.disabled = true;
+            button.textContent = 'Removing...';
+
+            $.ajax({
+                url: "{% url 'remove-from-list' %}",
+                type: "POST",
+                data: {
+                    movie_id: movieId,
+                    csrfmiddlewaretoken: "{{ csrf_token }}"
+                },
+                success: function(data) {
+                    button.textContent = 'Removed ✓';
+                    button.classList.add('bg-green-600');
+                    
+                    // Reload the page after a short delay to show the updated list
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                },
+                error: function(xhr, errmsg, err) {
+                    console.error("Error removing item from list: " + errmsg);
+                    button.textContent = 'Error';
+                    button.classList.add('bg-red-800');
+                    
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = 'Remove from List';
+                        button.classList.remove('bg-red-800');
+                    }, 2000);
                 }
             });
         }

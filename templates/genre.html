@@ -40,7 +40,7 @@
 
 
         <div class="flex space-x-5 items-center">
-            <form action="search" method="POST">
+            <form action="search/" method="POST">
                 {% csrf_token %}
                 <input type="search" name="search_term" placeholder="Search" class="bg-gray-700 p-2 rounded">
                 <button class="bg-red-600 text-white p-2 rounded hover:bg-red-500">Search</button>
@@ -58,7 +58,7 @@
     
         <div align="center">
             <h2 class="text-xl mb-5">
-                '{{movie_genre | title}}' Films
+                '{{genre}}' Films
             </h2>
         </div>
         <div class="flex space-x-5 overflow-x-auto">

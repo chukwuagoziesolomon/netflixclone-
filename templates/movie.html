@@ -8,52 +8,173 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
-<body class="bg-blue-900 text-white" style="background-color: #181818;">
-
+<body class="bg-black text-white">
+    {% csrf_token %}
     <!-- Navbar -->
-    <header class="p-5 flex justify-between items-center">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png" height="30" alt="Netflix Logo" width="110">
-        <nav class="flex space-x-5">
-            <span>Home</span>
-            <span>Series</span>
-            <span>Films</span>
-            <span>New & Popular</span>
-        </nav>
-        <div class="flex space-x-5 items-center">
-            <input type="search" placeholder="Search" class="bg-gray-700 p-2 rounded">
-            <button class="bg-red-600 text-white p-2 rounded hover:bg-red-500">Search</button>
-            <div class="relative">
-                <a href="#" class="block p-2">Logout</a>
+    <header class="fixed top-0 w-full z-50 bg-gradient-to-b from-black to-transparent p-5">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png" height="30" alt="Netflix Logo" width="110">
+                <nav class="hidden md:flex space-x-4">
+                    <a href="/" class="hover:text-gray-300">Home</a>
+                    <div class="dropdown">
+                        <span id="dropdownMenuButton" class="cursor-pointer" onclick="toggleDropdown()">Genres ▼</span>
+                        
+                        <div id="dropdownMenu" class="dropdown-content hidden">
+                            <ul><a href="/genre/action/">Action</a></ul>
+                            <ul><a href="/genre/comedy/">Comedy</a></ul>
+                            <ul><a href="/genre/drama/">Drama</a></ul>
+                            <ul><a href="/genre/horror/">Horror</a></ul>
+                            <ul><a href="/genre/romance/">Romance</a></ul>
+                            <ul><a href="/genre/sciencefiction/">Science Fiction</a></ul>
+                            <ul><a href="/genre/fantasy/">Fantasy</a></ul>
+                        </div>
+                        <script>
+                            function toggleDropdown() {
+                                const dropdownMenu = document.getElementById('dropdownMenu');
+                                dropdownMenu.classList.toggle('hidden');
+                            }
+                        </script>
+                    </div>
+                    <a href="/my-list" class="hover:text-gray-300">My List</a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                <input type="search" placeholder="Search" class="bg-gray-800 text-white px-4 py-2 rounded">
+                <a href="{% url 'logout' %}" class="hover:text-gray-300">Logout</a>
             </div>
         </div>
     </header>
 
-    <hr>
-    <!-- Main Content -->
-    <div class="container mx-auto mt-10">
-        <!-- Movie Title and Back Button -->
-        <div class="flex items-center justify-between">
-            <h2 class="text-3xl font-semibold">{{movie_details.title}}</h2>
-            <a href="/" class="text-gray-400 hover:text-white">← Back to movies</a>
+    <!-- Hero Section with Movie Details -->
+    <div class="relative h-screen">
+        <!-- Background Image -->
+        <div class="absolute inset-0">
+            <img src="{{movie_details.image_cover.url}}" alt="{{movie_details.title}}" class="w-full h-full object-cover opacity-60">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
         </div>
 
-        <div class="mt-8">
-            <video class="w-full h-auto" controls>
-                <source src="{{movie_details.video.url}}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        </div>
+        <!-- Content -->
+        <div class="relative z-10 h-full flex flex-col justify-end px-12 pb-24">
+            <div class="max-w-2xl">
+                <h1 class="text-6xl font-bold mb-4">{{movie_details.title}}</h1>
+                
+                <div class="flex items-center space-x-4 text-sm mb-4">
+                    <span>{{movie_details.release_date|date:"Y"}}</span>
+                    <span class="px-2 py-1 border border-gray-400 rounded">{{movie_details.rating}}</span>
+                    <span>{{movie_details.length}} min</span>
+                </div>
 
+                <p class="text-lg mb-8 text-gray-200 line-clamp-3">{{movie_details.description}}</p>
 
-        <!-- Movie Description -->
-        <div class="mt-6">
-            <h3 class="text-xl font-semibold mb-2">About the Movie</h3>
-            <p>
-                {{movie_details.description}}
-            </p>
+                <div class="flex space-x-4">
+                    <button onclick="playMovie()" class="bg-red-600 text-white px-8 py-2 rounded hover:bg-red-700 transition">
+                        Play
+                    </button>
+                    <button id="addToListBtn" ondblclick="removeFromList()" onclick="addToList()" class="bg-gray-800 text-white px-8 py-2 rounded hover:bg-gray-700 border border-gray-300 transition">
+                        Add to List
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-</body>
+    <!-- Video Player Modal -->
+    <div id="videoContainer" class="fixed inset-0 bg-black z-50 hidden items-center justify-center">
+        <button onclick="closeVideo()" class="absolute top-4 right-4 text-white text-4xl hover:text-gray-300">&times;</button>
+        <video class="w-full h-full object-contain" controls>
+            <source src="{{movie_details.video.url}}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
 
+    <script>
+        function playMovie() {
+            const videoContainer = document.getElementById('videoContainer');
+            const video = videoContainer.querySelector('video');
+            videoContainer.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            video.play();
+        }
+
+        function closeVideo() {
+            const videoContainer = document.getElementById('videoContainer');
+            const video = videoContainer.querySelector('video');
+            videoContainer.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            video.pause();
+        }
+
+        function addToList() {
+            const button = document.getElementById('addToListBtn');
+            button.disabled = true;
+            button.textContent = 'Adding...';
+
+            fetch("{% url 'add-to-list' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': "{{ csrf_token }}"
+                },
+                body: 'movie_id={{ movie_details.id }}'
+            })
+            .then(response => response.json())
+            .then(data => {
+                button.textContent = 'Added ✓';
+                button.classList.remove('bg-gray-800');
+                button.classList.add('bg-green-600');
+                button.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.textContent = 'Error';
+                button.classList.remove('bg-gray-800');
+                button.classList.add('bg-red-600');
+                
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = 'Add to List';
+                    button.classList.remove('bg-red-600');
+                    button.classList.add('bg-gray-800');
+                }, 2000);
+            });
+        }
+
+        function removeFromList() {
+            const button = document.getElementById('addToListBtn');
+            button.disabled = true;
+            button.textContent = 'Removing...';
+
+            fetch("{% url 'remove-from-list' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': "{{ csrf_token }}"
+                },
+                body: 'movie_id={{ movie_details.id }}'
+            })
+            .then(response => response.json())
+            .then(data => {
+                button.textContent = 'Add to List';
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-gray-800');
+                button.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.textContent = 'Error';
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-red-600');
+                
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = 'Add to List';
+                    button.classList.remove('bg-red-600');
+                    button.classList.add('bg-gray-800');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
 </html>
+
